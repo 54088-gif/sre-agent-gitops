@@ -18,7 +18,7 @@ spec:
     spec:
       containers:
       - name: ollama
-        image: ollama/ollama:latest
+        image: docker.m.daocloud.io/ollama/ollama:latest
         ports:
         - containerPort: 11434
       volumes:
