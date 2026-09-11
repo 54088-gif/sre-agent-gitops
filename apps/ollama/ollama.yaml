@@ -21,6 +21,11 @@ spec:
         image: ollama/ollama:latest
         ports:
         - containerPort: 11434
+      volumes:
+      - name: ollama-model-storage
+        hostPath:
+          path: /data/ollama
+          type: DirectoryOrCreate
 ---
 apiVersion: v1
 kind: Service
