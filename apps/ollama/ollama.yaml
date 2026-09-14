@@ -2,7 +2,55 @@ apiVersion: v1
 kind: Namespace
 metadata:
   name: ai-services
+
 ---
+# 1. PV：真正对应宿主机上的存储空间
+apiVersion: v1
+kind: PersistentVolume
+metadata:
+  name: ollama-pv
+spec:
+  capacity:
+    storage: 20Gi
+
+  accessModes:
+    - ReadWriteOnce
+
+  persistentVolumeReclaimPolicy: Retain
+
+  storageClassName: ollama-local
+
+  local:
+    path: /data/ollama
+
+  nodeAffinity:
+    required:
+      nodeSelectorTerms:
+        - matchExpressions:
+            - key: kubernetes.io/hostname
+              operator: In
+              values:
+                - k8s-node3
+
+---
+# 2. PVC：Pod 通过 PVC 请求 PV
+apiVersion: v1
+kind: PersistentVolumeClaim
+metadata:
+  name: ollama-pvc
+  namespace: ai-services
+spec:
+  accessModes:
+    - ReadWriteOnce
+
+  resources:
+    requests:
+      storage: 20Gi
+
+  storageClassName: ollama-local
+
+---
+# 3. Ollama Deployment
 apiVersion: apps/v1
 kind: Deployment
 metadata:
@@ -10,23 +58,35 @@ metadata:
   namespace: ai-services
 spec:
   replicas: 1
+
   selector:
-    matchLabels: { app: ollama }
+    matchLabels:
+      app: ollama
+
   template:
     metadata:
-      labels: { app: ollama }
+      labels:
+        app: ollama
+
     spec:
       containers:
-      - name: ollama
-        image: docker.m.daocloud.io/ollama/ollama:latest
-        ports:
-        - containerPort: 11434
+        - name: ollama
+          image: docker.m.daocloud.io/ollama/ollama:latest
+
+          ports:
+            - containerPort: 11434
+
+          volumeMounts:
+            - name: ollama-model-storage
+              mountPath: /root/.ollama
+
       volumes:
-      - name: ollama-model-storage
-        hostPath:
-          path: /data/ollama
-          type: DirectoryOrCreate
+        - name: ollama-model-storage
+          persistentVolumeClaim:
+            claimName: ollama-pvc
+
 ---
+# 4. Service
 apiVersion: v1
 kind: Service
 metadata:
@@ -34,8 +94,11 @@ metadata:
   namespace: ai-services
 spec:
   type: NodePort
-  selector: { app: ollama }
+
+  selector:
+    app: ollama
+
   ports:
-  - port: 11434
-    targetPort: 11434
-    nodePort: 31982
+    - port: 11434
+      targetPort: 11434
+      nodePort: 31982
