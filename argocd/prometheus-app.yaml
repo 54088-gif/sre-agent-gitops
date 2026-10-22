@@ -1,0 +1,31 @@
+apiVersion: argoproj.io/v1alpha1
+kind: Application
+metadata:
+  name: prometheus-stack
+  namespace: argocd
+  finalizers:
+  - resources-finalizer.argocd.argoproj.io
+spec:
+  project: default
+  destination:
+    server: 'https://kubernetes.default.svc'
+    namespace: monitoring
+  syncPolicy:
+    automated:
+      selfHeal: true # 只开启自愈，不开启自动修剪
+  source:
+    # 接管模式：直接引用 Helm Chart 仓库，使 Argo CD 管理 Prometheus 栈的安装状态。
+    repoURL: 'https://prometheus-community.github.io/helm-charts'
+    chart: kube-prometheus-stack
+    targetRevision: 57.2.0
+    helm:
+      values: |
+        grafana:
+          service:
+            type: NodePort
+        prometheus:
+          service:
+            type: NodePort
+        alertmanager:
+          service:
+            type: NodePort

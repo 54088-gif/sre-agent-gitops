@@ -1,0 +1,20 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: crash-app
+  namespace: default
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: crash-app
+  template:
+    metadata:
+      labels:
+        app: crash-app
+    spec:
+      containers:
+      - name: main
+        image: alpine:latest
+        # 有意设计为持续崩溃的应用，作为 SRE Agent 的可修复目标。
+        command: ["/bin/sh", "-c", "echo 'I am designed to fail!'; exit 1"]

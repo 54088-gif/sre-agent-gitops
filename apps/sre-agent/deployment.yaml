@@ -18,3 +18,10 @@ spec:
       - name: agent
         image: sre-agent:v2 # 使用我们本地构建的镜像
         imagePullPolicy: IfNotPresent # 关键！强制使用本地镜像
+        env:
+        - name: PROMETHEUS_URL
+          value: "http://prometheus-stack-kube-prom-prometheus.monitoring.svc:9090" # 集群内访问 Prometheus
+        - name: OLLAMA_URL
+          value: "http://ollama-service.ai-services.svc:11434" # 集群内访问 Ollama
+        - name: OLLAMA_MODEL
+          value: "qwen2.5:1.5b"
